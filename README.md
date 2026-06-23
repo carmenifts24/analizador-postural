@@ -29,12 +29,12 @@ Estos dos repositorios representan las dos etapas del trabajo:
 - **GitHub** conserva el codigo fuente, la documentacion y el historial del proyecto.
 - **Hugging Face Spaces** ejecuta la aplicacion Gradio para que pueda probarse desde el navegador.
 
-## Integrantes
+## Realizado Por
 
 - Carmen Rodriguez
-- Agregar aqui otros integrantes del equipo, si corresponde.
 
-## Proposito
+
+## Propósito
 
 El objetivo es demostrar conocimientos de:
 
@@ -63,8 +63,6 @@ En cada caso, PoseCheck puede devolver:
 Los tres modos fueron validados localmente desde navegador: imagen, webcam y video corto.
 
 ## Metricas posturales
-
-La primera version calcula:
 
 - inclinacion de hombros;
 - inclinacion de cadera;
