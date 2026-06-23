@@ -1,4 +1,4 @@
-# Procedimiento de desarrollo y guia para defensa
+# Procedimiento de desarrollo
 
 ## Objetivo del proyecto
 
@@ -13,7 +13,7 @@ de landmarks, calculos geometricos, interfaz web con Gradio y despliegue reprodu
 
 ## Estructura creada
 
-La aplicacion se organizo en archivos separados para que el codigo sea defendible y facil de
+La aplicacion se organizo en archivos separados para que el codigo sea entendible y facil de
 explicar:
 
 - `app.py`: define la interfaz Gradio y conecta los tres modos de entrada.
