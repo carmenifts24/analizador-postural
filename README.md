@@ -203,12 +203,12 @@ repositorio correcto y luego hacer `git add`, `git commit` y `git push`.
 El Space creado para la aplicacion es:
 
 ```text
-https://huggingface.co/spaces/carmenmarylin/analizador-postural
+https://huggingface.co/spaces/carmenmarylinrp/analizador-postural
 ```
 
 Para desplegar:
 
-1. Abrir el Space `carmenmarylin/analizador-postural`.
+1. Abrir el Space `carmenmarylinrp/analizador-postural`.
 2. Verificar que el SDK sea **Gradio**.
 3. Subir o sincronizar los archivos del proyecto:
    - `app.py`
@@ -224,7 +224,7 @@ Para desplegar:
 Tambien se puede clonar el Space y subir los archivos por Git:
 
 ```powershell
-git clone https://huggingface.co/spaces/carmenmarylin/analizador-postural
+git clone https://huggingface.co/spaces/carmenmarylinrp/analizador-postural
 ```
 
 ## Ejecucion con Docker
