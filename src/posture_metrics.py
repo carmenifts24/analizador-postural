@@ -1,15 +1,33 @@
-"""Calculo e interpretacion de metricas posturales simples."""
+"""
+Módulo de cálculo e interpretación de métricas posturales geométricas.
 
-from __future__ import annotations
+A partir de los 12 landmarks extraídos por PoseDetector, computa cinco
+indicadores simples y defendibles en un contexto educativo introductorio:
+
+  - Inclinación de hombros: ángulo de la línea biacromial respecto a la horizontal.
+  - Inclinación de cadera: ídem para la línea biilíaca.
+  - Alineación troncal: desplazamiento lateral de la línea media de hombros
+    respecto a la línea media de cadera, expresado en porcentaje del ancho de hombros.
+  - Ángulos articulares de brazos y piernas: ángulo formado en cada articulación
+    (hombro-codo-muñeca, cadera-rodilla-tobillo).
+
+Ninguna métrica infiere condiciones clínicas; son exploraciones visuales.
+"""
+
+from __future__ import annotations  # habilita anotaciones de tipo diferidas (PEP 563)
 
 from math import atan2, degrees
 from statistics import mean
 from typing import Any
 
 
+# Aliases de tipo para simplificar las firmas de funciones;
+# Metric reúne los campos label/value/unit/level/message de cada indicador.
 Metric = dict[str, Any]
 Landmarks = dict[str, dict[str, float]]
 
+# Umbral mínimo de confianza de MediaPipe para considerar un landmark válido.
+# Por debajo de 0.45 el punto es demasiado incierto para calcular ángulos confiables.
 MIN_VISIBILITY = 0.45
 
 
@@ -22,6 +40,8 @@ def compute_posture_metrics(landmarks: Landmarks) -> dict[str, Metric]:
     """
     metrics: dict[str, Metric] = {}
 
+    # Se usa el mismo umbral de 8° para hombros y cadera; valor referencial
+    # para uso educativo, no un criterio clínico.
     metrics["shoulder_tilt"] = _tilt_metric(
         "Inclinacion de hombros",
         landmarks,
@@ -74,6 +94,7 @@ def format_metrics_table(metrics: dict[str, Metric]) -> list[list[str]]:
     for metric in metrics.values():
         value = metric.get("value")
         unit = metric.get("unit", "")
+        # .strip() elimina el espacio sobrante cuando unit es cadena vacía
         value_text = "No disponible" if value is None else f"{value:.1f} {unit}".strip()
         rows.append([metric["label"], value_text, metric["message"]])
     return rows
@@ -104,6 +125,7 @@ def summarize_feedback(metrics: dict[str, Metric], landmarks_found: list[str]) -
             "La lectura debe entenderse como una exploracion visual, no como evaluacion profesional."
         )
 
+    # Se limita a 3 advertencias para no saturar el texto de retroalimentación
     warning_text = "; ".join(metric["message"] for metric in warnings[:3])
     return (
         f"{intro}\n\n"
@@ -120,6 +142,8 @@ def average_metrics(metrics_list: list[dict[str, Metric]]) -> dict[str, Metric]:
     averaged: dict[str, Metric] = {}
     keys = metrics_list[0].keys()
     for key in keys:
+        # Se toma el primer frame como plantilla para copiar label, unit y estructura;
+        # solo value, message y level se recalculan con el promedio.
         base = metrics_list[0][key].copy()
         values = [metrics[key]["value"] for metrics in metrics_list if metrics[key].get("value") is not None]
         if values:
@@ -146,7 +170,11 @@ def _tilt_metric(
 
     a = landmarks[point_a]
     b = landmarks[point_b]
+    # atan2 calcula el ángulo de la recta que une los dos puntos respecto al eje X;
+    # preserva el cuadrante correcto, a diferencia de atan(dy/dx) que pierde el signo.
     angle = degrees(atan2(a["y"] - b["y"], a["x"] - b["x"]))
+    # Se colapsa a [-90°, 90°] para medir solo la desviación respecto a la horizontal,
+    # independientemente de cuál hombro/cadera está más alto.
     normalized = abs(_normalize_horizontal_angle(angle))
     return {
         "label": label,
@@ -165,7 +193,9 @@ def _torso_alignment_metric(landmarks: Landmarks) -> Metric:
     shoulder_mid_x = mean([landmarks["left_shoulder"]["x"], landmarks["right_shoulder"]["x"]])
     hip_mid_x = mean([landmarks["left_hip"]["x"], landmarks["right_hip"]["x"]])
     shoulder_width = abs(landmarks["left_shoulder"]["x"] - landmarks["right_shoulder"]["x"])
-    reference = max(shoulder_width, 1.0)
+    # El ancho de hombros como referencia hace que el porcentaje sea independiente
+    # de la distancia de la persona a la cámara (normalización por escala).
+    reference = max(shoulder_width, 1.0)  # evita división por cero en vistas laterales donde los hombros se superponen
     offset_percent = abs(shoulder_mid_x - hip_mid_x) / reference * 100
 
     return {
@@ -195,13 +225,17 @@ def _angle_metric(label: str, landmarks: Landmarks, a_name: str, b_name: str, c_
 
 
 def _angle_between_points(a: dict[str, float], b: dict[str, float], c: dict[str, float]) -> float:
+    # Vectores desde el vértice b hacia cada extremo de la articulación
     ba_x, ba_y = a["x"] - b["x"], a["y"] - b["y"]
     bc_x, bc_y = c["x"] - b["x"], c["y"] - b["y"]
+    # La diferencia entre los ángulos polares de cada vector da el ángulo en b
     angle = abs(degrees(atan2(bc_y, bc_x) - atan2(ba_y, ba_x)))
+    # Si el resultado supera 180° se toma el suplemento para obtener siempre el ángulo menor
     return 360 - angle if angle > 180 else angle
 
 
 def _visible(landmarks: Landmarks, *names: str) -> bool:
+    # .get con default 0 trata como invisible cualquier punto sin campo "visibility"
     return all(name in landmarks and landmarks[name].get("visibility", 0) >= MIN_VISIBILITY for name in names)
 
 
@@ -216,6 +250,9 @@ def _unavailable(label: str) -> Metric:
 
 
 def _normalize_horizontal_angle(angle: float) -> float:
+    # atan2 devuelve valores en [-180°, 180°]; una línea horizontal puede ser 0° o ±180°.
+    # Los bucles colapsan cualquier ángulo a [-90°, 90°], donde 0° = horizontal,
+    # de modo que el valor absoluto expresa la inclinación real sin importar la orientación.
     while angle > 90:
         angle -= 180
     while angle < -90:
