@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import subprocess
 import tempfile
 
 import cv2
+import imageio_ffmpeg
 
 from src.pose_detector import PoseDetector
 from src.posture_metrics import Metric, average_metrics
@@ -44,13 +46,18 @@ def process_video_file(video_path: str, target_fps: int = 10, max_seconds: int =
     sample_step = max(int(round(source_fps / target_fps)), 1)
 
     output_dir = Path(tempfile.mkdtemp(prefix="posecheck_"))
+    raw_output_path = output_dir / "video_procesado_raw.mp4"
     output_path = output_dir / "video_procesado.mp4"
     writer = cv2.VideoWriter(
-        str(output_path),
+        str(raw_output_path),
         cv2.VideoWriter_fourcc(*"mp4v"),
         min(source_fps, target_fps),
         (width, height),
     )
+
+    if not writer.isOpened():
+        capture.release()
+        raise ValueError("OpenCV no pudo crear el archivo de video de salida.")
 
     metrics_per_frame = []
     landmarks_found: set[str] = set()
@@ -81,11 +88,43 @@ def process_video_file(video_path: str, target_fps: int = 10, max_seconds: int =
     capture.release()
     writer.release()
 
+    browser_output_path = _convert_to_browser_mp4(raw_output_path, output_path)
+
     return VideoProcessingResult(
-        output_path=str(output_path),
+        output_path=str(browser_output_path),
         total_frames=frames_read,
         frames_analyzed=frames_analyzed,
         frames_with_pose=frames_with_pose,
         landmarks_found=sorted(landmarks_found),
         average_metrics=average_metrics(metrics_per_frame),
     )
+
+
+def _convert_to_browser_mp4(input_path: Path, output_path: Path) -> Path:
+    """Convierte el video a H.264 para que el navegador lo reproduzca.
+
+    OpenCV puede escribir MP4 con `mp4v`, pero algunos navegadores o componentes
+    de Gradio no lo muestran correctamente. `imageio-ffmpeg` trae un binario de
+    ffmpeg reproducible, util tanto localmente como en Hugging Face Spaces.
+    """
+    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+    command = [
+        ffmpeg,
+        "-y",
+        "-i",
+        str(input_path),
+        "-vcodec",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        str(output_path),
+    ]
+
+    try:
+        subprocess.run(command, check=True, capture_output=True, text=True)
+    except (OSError, subprocess.CalledProcessError):
+        return input_path
+
+    return output_path if output_path.exists() and output_path.stat().st_size > 0 else input_path

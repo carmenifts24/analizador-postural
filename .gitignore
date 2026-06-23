@@ -6,5 +6,10 @@ venv/
 .gradio/
 outputs/
 *.log
+analizador-postural/
+examples/*.mp4
+examples/*.mov
+examples/*.avi
+examples/*.mkv
 .DS_Store
 Thumbs.db

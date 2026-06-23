@@ -7,6 +7,7 @@ leer, probar y defender.
 
 from __future__ import annotations
 
+import os
 import traceback
 from typing import Any
 
@@ -135,6 +136,8 @@ with gr.Blocks(title="Analizador Postural", theme=gr.themes.Soft()) as demo:
                     label="Capturar foto desde webcam",
                     sources=["webcam"],
                     type="numpy",
+                    interactive=True,
+                    mirror_webcam=True,
                 )
                 webcam_output = gr.Image(label="Imagen procesada", type="numpy")
             webcam_button = gr.Button("Analizar captura", variant="primary")
@@ -144,11 +147,21 @@ with gr.Blocks(title="Analizador Postural", theme=gr.themes.Soft()) as demo:
                 label="Metricas posturales",
                 interactive=False,
             )
-            webcam_feedback = gr.Markdown()
+            webcam_feedback = gr.Markdown(
+                "### Resultado\n\nActive la camara, tome una foto y espere el analisis. "
+                "Si el navegador pide permisos, debe aceptarlos para que Gradio reciba la imagen."
+            )
+            webcam_input.change(
+                analyze_image,
+                inputs=webcam_input,
+                outputs=[webcam_output, webcam_metrics, webcam_feedback],
+                show_progress="full",
+            )
             webcam_button.click(
                 analyze_image,
                 inputs=webcam_input,
                 outputs=[webcam_output, webcam_metrics, webcam_feedback],
+                show_progress="full",
             )
 
         with gr.Tab("Video corto"):
@@ -184,4 +197,8 @@ with gr.Blocks(title="Analizador Postural", theme=gr.themes.Soft()) as demo:
 
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(
+        server_name=os.getenv("GRADIO_SERVER_NAME", "127.0.0.1"),
+        server_port=int(os.getenv("GRADIO_SERVER_PORT", "7860")),
+        share=os.getenv("GRADIO_SHARE", "false").lower() == "true",
+    )

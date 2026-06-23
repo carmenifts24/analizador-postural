@@ -50,8 +50,8 @@ El objetivo es demostrar conocimientos de:
 La aplicacion incluye tres modos de uso:
 
 1. **Imagen subida manualmente:** procesa archivos JPG o PNG.
-2. **Webcam:** permite capturar una foto desde la camara del navegador.
-3. **Video corto:** procesa videos breves, idealmente de 5 a 10 segundos.
+2. **Webcam:** permite capturar una foto desde la camara del navegador y analizarla automaticamente.
+3. **Video corto:** procesa videos breves, idealmente de 5 a 10 segundos, y devuelve un MP4 compatible con navegador.
 
 En cada caso, PoseCheck puede devolver:
 
@@ -59,6 +59,8 @@ En cada caso, PoseCheck puede devolver:
 - metricas posturales basicas;
 - devolucion textual educativa;
 - advertencias si no se detecta una persona con suficiente confianza.
+
+Los tres modos fueron validados localmente desde navegador: imagen, webcam y video corto.
 
 ## Metricas posturales
 
@@ -97,8 +99,12 @@ venv\Scripts\activate
 Instalar dependencias:
 
 ```powershell
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
+
+El archivo `requirements.txt` fija versiones compatibles de `gradio_client`,
+`huggingface_hub`, `fastapi` y `pydantic` porque Gradio 4.44.0 puede fallar con versiones
+transitivas demasiado nuevas de esas librerias.
 
 Ejecutar la aplicacion:
 
@@ -110,6 +116,30 @@ Luego abrir:
 
 ```text
 http://localhost:7860
+```
+
+### Nota para Windows
+
+Si Windows bloquea `pip.exe` con un mensaje de Control de aplicaciones, usar:
+
+```powershell
+venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+Esta variante usa `pip` como modulo de Python y evita ejecutar directamente `pip.exe`.
+
+Si Gradio informa que `localhost` no es accesible por configuracion de red o proxy, se puede
+ejecutar temporalmente con enlace publico de Gradio:
+
+```powershell
+$env:GRADIO_SHARE="true"
+venv\Scripts\python.exe app.py
+```
+
+Para volver al modo local:
+
+```powershell
+Remove-Item Env:\GRADIO_SHARE
 ```
 
 ## Uso de la aplicacion
@@ -126,7 +156,7 @@ http://localhost:7860
 1. Abrir la pestana **Webcam**.
 2. Permitir el uso de la camara en el navegador.
 3. Capturar una foto.
-4. Presionar **Analizar captura**.
+4. Esperar el analisis automatico o presionar **Analizar captura** si se desea repetirlo.
 
 ### Modo video corto
 
@@ -134,6 +164,8 @@ http://localhost:7860
 2. Subir un video breve.
 3. Presionar **Analizar video**.
 4. Revisar el video anotado y el promedio de metricas.
+
+La salida se convierte a MP4 H.264 para mejorar la reproduccion dentro de Gradio y del navegador.
 
 Para videos se recomienda:
 
@@ -225,7 +257,11 @@ El repositorio incluye:
 - `packages.txt` para dependencias del sistema en Spaces;
 - `Dockerfile` opcional;
 - separacion de codigo en modulos;
-- documentacion de instalacion, ejecucion y despliegue.
+- documentacion de instalacion, ejecucion, decisiones tecnicas y despliegue.
+
+Los videos usados para prueba local no se versionan por defecto para evitar archivos pesados en
+GitHub y Hugging Face. Si se desea incluir un ejemplo liviano, conviene comprimirlo y verificar
+que el tamano sea razonable.
 
 ## Limitaciones conocidas
 
