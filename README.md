@@ -22,7 +22,7 @@ No es una herramienta medica ni realiza diagnosticos profesionales.
 ## Repositorios del proyecto
 
 - Repositorio GitHub: <https://github.com/carmenifts24/analizador-postural>
-- Aplicacion en Hugging Face Spaces: <https://huggingface.co/spaces/carmenmarylin/analizador-postural>
+- Aplicacion en Hugging Face Spaces: <https://huggingface.co/spaces/carmenmarylinrp/analizador-postural>
 
 Estos dos repositorios representan las dos etapas del trabajo:
 
